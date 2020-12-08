@@ -1,12 +1,142 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:aapt="http://schemas.android.com/aapt" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
-    <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent">
-        <Button android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:textColor="@color/colorFont" android:gravity="center" android:id="@+id/buttonGoToLogIn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1dp" android:text="@string/button_go_to_log_in" android:layout_marginStart="30dp" android:layout_marginEnd="30dp" app:layout_constraintBottom_toBottomOf="0" app:layout_constraintEnd_toEndOf="0" app:layout_constraintHorizontal_bias="0.5" app:layout_constraintStart_toStartOf="0" app:layout_constraintTop_toTopOf="0" app:layout_constraintVertical_bias="0.05"/>
-        <Button android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:textColor="@color/colorFont" android:gravity="center" android:id="@+id/buttonRegister" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="30dp" android:text="@string/button_register" android:layout_marginStart="30dp" android:layout_marginEnd="30dp" app:layout_constraintBottom_toBottomOf="0" app:layout_constraintEnd_toEndOf="0" app:layout_constraintHorizontal_bias="0" app:layout_constraintStart_toStartOf="0" app:layout_constraintTop_toBottomOf="@+id/buttonGoToLogIn" app:layout_constraintVertical_bias="0"/>
-        <TextView android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:textColor="@color/colorFont" android:gravity="center" android:id="@+id/textViewHeader" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/header_register" android:textAlignment="center" android:layout_marginStart="30dp" android:layout_marginEnd="30dp" app:layout_constraintBottom_toBottomOf="0" app:layout_constraintEnd_toEndOf="0" app:layout_constraintHorizontal_bias="1" app:layout_constraintStart_toStartOf="0" app:layout_constraintTop_toBottomOf="@+id/buttonRegister" app:layout_constraintVertical_bias="0.15"/>
-        <TextView android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:textColor="@color/colorFont" android:gravity="center" android:id="@+id/textViewInfoRegister" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/info_register" android:textAlignment="center" android:layout_marginStart="30dp" android:layout_marginEnd="30dp" app:layout_constraintBottom_toBottomOf="0" app:layout_constraintEnd_toEndOf="0" app:layout_constraintHorizontal_bias="0" app:layout_constraintStart_toStartOf="0" app:layout_constraintTop_toBottomOf="@+id/textViewHeader" app:layout_constraintVertical_bias="0.05"/>
-        <EditText android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:textColor="@color/colorFont" android:gravity="center" android:id="@+id/editTextEnterName" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/hint_enter_name" android:inputType="text" android:textAlignment="center" android:layout_marginStart="30dp" android:layout_marginEnd="30dp" app:layout_constraintBottom_toBottomOf="0" app:layout_constraintEnd_toEndOf="0" app:layout_constraintHorizontal_bias="0.5" app:layout_constraintStart_toStartOf="0" app:layout_constraintTop_toBottomOf="@+id/textViewInfoRegister" app:layout_constraintVertical_bias="0.15"/>
-        <EditText android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:textColor="@color/colorFont" android:gravity="center" android:id="@+id/editTextEnterMail" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/hint_enter_mail" android:inputType="textEmailAddress" android:textAlignment="center" android:layout_marginStart="30dp" android:layout_marginEnd="30dp" app:layout_constraintBottom_toBottomOf="0" app:layout_constraintEnd_toEndOf="0" app:layout_constraintHorizontal_bias="0.5" app:layout_constraintStart_toStartOf="0" app:layout_constraintTop_toBottomOf="@+id/editTextEnterName" app:layout_constraintVertical_bias="0.1"/>
-        <EditText android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:textColor="@color/colorFont" android:gravity="center" android:id="@+id/editTextEnterPassword" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/hint_enter_password" android:inputType="textPassword" android:textAlignment="center" android:layout_marginStart="30dp" android:layout_marginEnd="30dp" app:layout_constraintBottom_toBottomOf="0" app:layout_constraintEnd_toEndOf="0" app:layout_constraintHorizontal_bias="0.5" app:layout_constraintStart_toStartOf="0" app:layout_constraintTop_toBottomOf="@+id/editTextEnterMail" app:layout_constraintVertical_bias="0.1"/>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/buttonGoToLogIn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:text="@string/button_go_to_log_in"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/colorFont"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.05" />
+
+        <Button
+            android:id="@+id/buttonRegister"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dp"
+            android:layout_marginTop="30dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:text="@string/button_register"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/colorFont"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonGoToLogIn"
+            app:layout_constraintVertical_bias="0.05"/>
+
+        <TextView
+            android:id="@+id/textViewHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:text="@string/header_register"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/colorFont"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonRegister"
+            app:layout_constraintVertical_bias="0.15" />
+
+        <TextView
+            android:id="@+id/textViewInfoRegister"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:text="@string/info_register"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/colorFont"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewHeader"
+            app:layout_constraintVertical_bias="0.05" />
+
+        <EditText
+            android:id="@+id/editTextEnterName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:hint="@string/hint_enter_name"
+            android:inputType="text"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/colorFont"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewInfoRegister"
+            app:layout_constraintVertical_bias="0.15" />
+
+        <EditText
+            android:id="@+id/editTextEnterMail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:hint="@string/hint_enter_mail"
+            android:inputType="textEmailAddress"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/colorFont"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/editTextEnterName"
+            app:layout_constraintVertical_bias="0.1" />
+
+        <EditText
+            android:id="@+id/editTextEnterPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:gravity="center"
+            android:hint="@string/hint_enter_password"
+            android:inputType="textPassword"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+            android:textColor="@color/colorFont"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/editTextEnterMail"
+            app:layout_constraintVertical_bias="0.1" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

@@ -1,116 +1,161 @@
 package com.practice.secretsanta;
 
+import android.text.TextUtils;
 import android.widget.ArrayAdapter;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
 
 public class SecretSantaHelper {
-    public void addUserToSecretSanta(DatabaseReference databaseReference, String str, SecretSanta secretSanta) {
-        String key = databaseReference.push().getKey();
-        databaseReference.child(key).setValue(new UserSecretSanta(key, str, secretSanta));
+
+    public void addUserToSecretSanta(DatabaseReference dataRefUserSecretSanta, String userId, SecretSanta secretSanta) {
+        // get a new unique key
+        final String id = dataRefUserSecretSanta.push().getKey();
+        //add user to secret santa
+        UserSecretSanta userSecretSanta = new UserSecretSanta(id, userId, secretSanta);
+        dataRefUserSecretSanta.child(id).setValue(userSecretSanta);
     }
 
-    public void removeUserFromSecretSanta(DatabaseReference databaseReference, String str, Map<String, UserSecretSanta> map) {
-        databaseReference.child(map.get(str).getId()).removeValue();
+
+    public void removeUserFromSecretSanta(DatabaseReference dataRefUserSecretSanta, final String userId, Map<String, UserSecretSanta> userSecretSantaUsers) {
+        String userSecretSantaId = userSecretSantaUsers.get(userId).getId();
+        // remove user from secret santa
+        dataRefUserSecretSanta.child(userSecretSantaId).removeValue();
     }
 
-    public void getAllUserSecretSantaUsers(DatabaseReference databaseReference, SecretSanta secretSanta, Map<String, User> map, ArrayList<User> arrayList, Map<String, UserSecretSanta> map2, ArrayAdapter<User> arrayAdapter) {
-        final Map<String, UserSecretSanta> map3 = map2;
-        final Map<String, User> map4 = map;
-        final ArrayList<User> arrayList2 = arrayList;
-        final ArrayAdapter<User> arrayAdapter2 = arrayAdapter;
-        databaseReference.orderByChild("secretSantaId").equalTo(secretSanta.getId()).addChildEventListener(new ChildEventListener() {
-            public void onCancelled(DatabaseError databaseError) {
-            }
-
-            public void onChildMoved(DataSnapshot dataSnapshot, String str) {
-            }
-
-            public void onChildAdded(DataSnapshot dataSnapshot, String str) {
-                UserSecretSanta userSecretSanta = (UserSecretSanta) dataSnapshot.getValue(UserSecretSanta.class);
-                map3.put(userSecretSanta.getUserId(), userSecretSanta);
-                for (Map.Entry entry : map4.entrySet()) {
-                    if (((String) entry.getKey()).equals(userSecretSanta.getUserId())) {
-                        arrayList2.add(entry.getValue());
-                        arrayAdapter2.notifyDataSetChanged();
+    public void getAllUserSecretSantaUsers(DatabaseReference dataRefUserSecretSanta, SecretSanta secretSanta, final Map<String, User> users, final ArrayList<User> usersSecretSanta, final Map<String, UserSecretSanta> userSecretSantaUsers, final ArrayAdapter<User> listViewArrayAdapter) {
+        dataRefUserSecretSanta.orderByChild("secretSantaId").equalTo(secretSanta.getId()).addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                UserSecretSanta userSecretSanta = dataSnapshot.getValue(UserSecretSanta.class);
+                userSecretSantaUsers.put(userSecretSanta.getUserId(), userSecretSanta);
+                for (Map.Entry<String, User> entry : users.entrySet()) {
+                    if (entry.getKey().equals(userSecretSanta.getUserId())) {
+                        usersSecretSanta.add(entry.getValue());
+                        // update listview with users
+                        listViewArrayAdapter.notifyDataSetChanged();
                     }
                 }
             }
 
-            public void onChildChanged(DataSnapshot dataSnapshot, String str) {
-                UserSecretSanta userSecretSanta = (UserSecretSanta) dataSnapshot.getValue(UserSecretSanta.class);
-                map3.put(userSecretSanta.getUserId(), userSecretSanta);
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                UserSecretSanta userSecretSanta = dataSnapshot.getValue(UserSecretSanta.class);
+                userSecretSantaUsers.put(userSecretSanta.getUserId(), userSecretSanta);
             }
 
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-                UserSecretSanta userSecretSanta = (UserSecretSanta) dataSnapshot.getValue(UserSecretSanta.class);
-                map3.remove(userSecretSanta.getUserId());
-                for (Map.Entry entry : map4.entrySet()) {
-                    if (((String) entry.getKey()).equals(userSecretSanta.getUserId())) {
-                        arrayList2.remove(entry.getValue());
-                        arrayAdapter2.notifyDataSetChanged();
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                UserSecretSanta userSecretSanta = dataSnapshot.getValue(UserSecretSanta.class);
+                userSecretSantaUsers.remove(userSecretSanta.getUserId());
+                for (Map.Entry<String, User> entry : users.entrySet()) {
+                    if (entry.getKey().equals(userSecretSanta.getUserId())) {
+                        usersSecretSanta.remove(entry.getValue());
+                        listViewArrayAdapter.notifyDataSetChanged();
                     }
                 }
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
         });
     }
 
-    public void selectSecretSantas(Map<String, UserSecretSanta> map, DatabaseReference databaseReference) {
-        int size = map.size();
-        UserSecretSanta[] userSecretSantaArr = new UserSecretSanta[size];
-        int i = 0;
-        for (Map.Entry<String, UserSecretSanta> value : map.entrySet()) {
-            userSecretSantaArr[i] = (UserSecretSanta) value.getValue();
-            i++;
+    // select secret santas
+    public void selectSecretSantas(Map<String, UserSecretSanta> userSecretSantaUsers, DatabaseReference dataRefUserSecretSanta) {
+
+        // put userSecretSanta into array
+        UserSecretSanta[] userSecretSantaArray = new UserSecretSanta[userSecretSantaUsers.size()];
+        int counter = 0;
+        for (Map.Entry<String, UserSecretSanta> entry : userSecretSantaUsers.entrySet()) {
+            userSecretSantaArray[counter] = entry.getValue();
+            counter++;
         }
-        ArrayList arrayList = new ArrayList();
-        for (int i2 = 0; i2 < size; i2++) {
-            arrayList.add(userSecretSantaArr[i2]);
+
+        // put userSecretSantas into list
+        ArrayList<UserSecretSanta> usersSelect = new ArrayList<>();
+        for (int i = 0; i < userSecretSantaArray.length; i++) {
+            usersSelect.add(userSecretSantaArray[i]);
         }
-        UserSecretSanta[] userSecretSantaArr2 = new UserSecretSanta[size];
-        int i3 = 0;
-        while (i3 < size) {
-            double random = Math.random();
-            double size2 = (double) arrayList.size();
-            Double.isNaN(size2);
-            int intValue = Double.valueOf(random * size2).intValue();
-            UserSecretSanta userSecretSanta = (UserSecretSanta) arrayList.get(intValue);
-            if (userSecretSanta.equals(userSecretSantaArr[i3])) {
-                i3--;
-                if (i3 == size - 1) {
-                    arrayList = new ArrayList();
-                    for (int i4 = 0; i4 < size; i4++) {
-                        arrayList.add(userSecretSantaArr[i4]);
+
+        // array for secret santas
+        UserSecretSanta[] secretSantas = new UserSecretSanta[userSecretSantaArray.length];
+
+        // go through userSercetSantas
+        for (int i = 0; i < userSecretSantaArray.length; i++) {
+
+            // get a random userSecretSanta
+            Double d = (Math.random() * usersSelect.size());
+            int number = d.intValue();
+            UserSecretSanta selectedSecretSanta = usersSelect.get(number);
+
+            // check if the selected one isnt the same as the user
+            if (selectedSecretSanta.equals(userSecretSantaArray[i])) {
+
+                // if both are same go one step back
+                i--;
+
+                // check if it was the pre last selection
+                if (i == (userSecretSantaArray.length - 1)) {
+
+                    // go back to start
+                    i = 0;
+                    usersSelect = new ArrayList<>();
+                    for (int j = 0; j < userSecretSantaArray.length; j++) {
+                        usersSelect.add(userSecretSantaArray[j]);
                     }
-                    i3 = 0;
                 }
+
             } else {
-                userSecretSantaArr2[i3] = userSecretSanta;
-                arrayList.remove(intValue);
-                ArrayList arrayList2 = new ArrayList();
-                for (int i5 = 0; i5 < arrayList.size(); i5++) {
-                    if (arrayList.get(i5) != null) {
-                        arrayList2.add(arrayList.get(i5));
+
+                // put selected secret santa into secretSantas
+                secretSantas[i] = selectedSecretSanta;
+
+                // remove the selected selected secret santa from the list of possible secret santas
+                usersSelect.remove(number);
+                ArrayList<UserSecretSanta> usersSelectHelp = new ArrayList<>();
+                for (int j = 0; j < usersSelect.size(); j++) {
+                    if (usersSelect.get(j) != null) {
+                        usersSelectHelp.add(usersSelect.get(j));
                     }
                 }
-                arrayList = new ArrayList();
-                Iterator it = arrayList2.iterator();
-                while (it.hasNext()) {
-                    arrayList.add((UserSecretSanta) it.next());
+
+                // put the users who are not secret santas already into the list of possible secret santas
+                usersSelect = new ArrayList<>();
+                for (UserSecretSanta user : usersSelectHelp) {
+                    usersSelect.add(user);
                 }
+
             }
-            i3++;
         }
-        for (int i6 = 0; i6 < size; i6++) {
-            UserSecretSanta userSecretSanta2 = userSecretSantaArr2[i6];
-            userSecretSanta2.setIdOfUserToBeSecretSantaFor(userSecretSantaArr[i6].getUserId());
-            userSecretSanta2.getSecretSanta().setSecretSantasSelected(true);
-            databaseReference.child(userSecretSanta2.getId()).setValue(userSecretSanta2);
+
+        // save secret santa selection
+        for (int i = 0; i < secretSantas.length; i++) {
+            // secret santa
+            UserSecretSanta selectedSecretSanta = secretSantas[i];
+
+            // user to be secret santa for
+            UserSecretSanta userSecretSantaToBeSecretSantaFor = userSecretSantaArray[i];
+
+            selectedSecretSanta.getSecretSanta().setSecretSantasSelected(true);
+
+            dataRefUserSecretSanta.child(selectedSecretSanta.getId()).setValue(selectedSecretSanta);
         }
     }
 }

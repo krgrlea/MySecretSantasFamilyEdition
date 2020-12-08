@@ -1,243 +1,452 @@
 package com.practice.secretsanta;
 
+import androidx.annotation.ArrayRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.practice.secretsanta.WishDialog;
+import com.google.firebase.database.ValueEventListener;
+
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicMarkableReference;
 
-public class SecretSantaActivity extends AppCompatActivity implements WishDialog.WishDialogListener {
-    Button buttonAddParticipants;
-    Button buttonAddWish;
+public class SecretSantaActivity extends AppCompatActivity {
+
+    // UI elements
     Button buttonLogOut;
+    TextView textViewHeaderSecretSanta;
+    Button buttonAddWish;
+    Button buttonAddParticipants;
+    ListView listViewUsersSecretSanta;
     Button buttonSelectSecretSantas;
+
+    // database
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference dataRefUser;
     DatabaseReference dataRefUserSecretSanta;
-    FirebaseDatabase database = FirebaseDatabase.getInstance();
-    FirebaseAuth fAuth = FirebaseAuth.getInstance();
-    ListView listViewUsersSecretSanta;
-    SecretSantaHelper secretSantaHelper = new SecretSantaHelper();
-    TextView textViewHeaderSecretSanta;
-    UserSecretSanta userSecretSanta;
 
-    /* access modifiers changed from: protected */
-    public void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
-        setContentView((int) C0859R.layout.activity_secret_santa);
-        this.dataRefUser = this.database.getReference(getResources().getString(C0859R.string.db_user));
-        this.dataRefUserSecretSanta = this.database.getReference(getResources().getString(C0859R.string.db_user_secret_santa));
-        this.buttonLogOut = (Button) findViewById(C0859R.C0862id.buttonLogOut);
-        this.textViewHeaderSecretSanta = (TextView) findViewById(C0859R.C0862id.textViewHeaderSecretSanta);
-        this.buttonAddWish = (Button) findViewById(C0859R.C0862id.buttonAddWish);
-        Button button = (Button) findViewById(C0859R.C0862id.buttonAddParticipants);
-        this.buttonAddParticipants = button;
-        button.setVisibility(4);
-        this.listViewUsersSecretSanta = (ListView) findViewById(C0859R.C0862id.listViewUsersSecretSanta);
-        this.buttonSelectSecretSantas = (Button) findViewById(C0859R.C0862id.buttonSelectSecretSantas);
-        this.userSecretSanta = (UserSecretSanta) getIntent().getSerializableExtra("userSecretSanta");
-        final Map map = (Map) getIntent().getSerializableExtra("users");
-        this.buttonLogOut.setOnClickListener(new View.OnClickListener() {
+    // current user
+    FirebaseAuth fAuth = FirebaseAuth.getInstance();
+
+    // helper class
+    SecretSantaHelper secretSantaHelper = new SecretSantaHelper();
+
+    @Override
+    protected void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_secret_santa);
+
+
+        // database connection
+        dataRefUser = database.getReference(getResources().getString(R.string.db_user));
+        dataRefUserSecretSanta = database.getReference(getResources().getString(R.string.db_user_secret_santa));
+
+
+        // get UI elements
+        buttonLogOut = (Button) findViewById(R.id.buttonLogOut);
+        textViewHeaderSecretSanta = (TextView) findViewById(R.id.textViewHeaderSecretSanta);
+        buttonAddWish = (Button) findViewById(R.id.buttonAddWish);
+        buttonAddParticipants = (Button) findViewById(R.id.buttonAddParticipants);
+        buttonAddParticipants.setVisibility(View.INVISIBLE);
+        listViewUsersSecretSanta = (ListView) findViewById(R.id.listViewUsersSecretSanta);
+        buttonSelectSecretSantas = (Button) findViewById(R.id.buttonSelectSecretSantas);
+
+
+        // get userSecretSanta of current user
+        final UserSecretSanta userSecretSanta = (UserSecretSanta) getIntent().getSerializableExtra("userSecretSanta");
+
+        // get all users
+        final Map<String, User> users = (Map<String, User>) getIntent().getSerializableExtra("users");
+
+
+        // logout possible
+        buttonLogOut.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View view) {
-                SecretSantaActivity.this.fAuth.signOut();
-                SecretSantaActivity.this.startActivity(new Intent(SecretSantaActivity.this, LogInActivity.class));
-                SecretSantaActivity.this.finish();
+                fAuth.signOut();
+                // zur Login-Seite springen
+                Intent intent = new Intent(SecretSantaActivity.this, LogInActivity.class);
+                startActivity(intent);
+                finish();
             }
         });
-        this.textViewHeaderSecretSanta.setText(this.userSecretSanta.getSecretSanta().toString());
-        this.textViewHeaderSecretSanta.setOnClickListener(new View.OnClickListener() {
+
+
+        // name of secret santa as header
+        textViewHeaderSecretSanta.setText(userSecretSanta.getSecretSanta().toString());
+
+        // show secret santa information by click on header
+        textViewHeaderSecretSanta.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View view) {
+
+                // dialog for showing information about secret santa
                 AlertDialog.Builder builder = new AlertDialog.Builder(SecretSantaActivity.this);
                 builder.setCancelable(true);
-                SecretSanta secretSanta = SecretSantaActivity.this.userSecretSanta.getSecretSanta();
-                if (secretSanta.getBudget() <= 0.0d && secretSanta.getPlace() == null && secretSanta.getDate() == null) {
-                    builder.setTitle("Es gibt keine Informationen!");
-                } else {
+
+                SecretSanta secretSanta = userSecretSanta.getSecretSanta();
+
+                if (secretSanta.getBudget() > 0 || secretSanta.getPlace() != null || secretSanta.getDate() != null) {
                     builder.setTitle("Hier stehen alle Infos!");
-                    EditText editText = new EditText(builder.getContext());
-                    editText.setEnabled(false);
-                    editText.setText("Name: " + secretSanta.getName() + "\n");
-                    if (secretSanta.getBudget() > 0.0d) {
-                        editText.append("Budget: " + new DecimalFormat("##0.00").format(secretSanta.getBudget()) + " €\n");
+                    // textView for information about selected secret santa
+                    EditText editTextInfo = new EditText(builder.getContext());
+
+                    // set editText disabled
+                    editTextInfo.setEnabled(false);
+
+                    // add information about secret santa
+                    editTextInfo.setText("Name: " + secretSanta.getName() + "\n");
+                    if (secretSanta.getBudget() > 0) {
+                        DecimalFormat decimalFormat = new DecimalFormat("##0.00");
+                        String budgetString = decimalFormat.format(secretSanta.getBudget());
+                        editTextInfo.append("Budget: " + budgetString + " €\n");
                     }
                     if (secretSanta.getPlace() != null) {
-                        editText.append("Ort: " + secretSanta.getPlace() + "\n");
+                        editTextInfo.append("Ort: " + secretSanta.getPlace() + "\n");
                     }
                     if (secretSanta.getDate() != null) {
-                        editText.append("Datum: " + new SimpleDateFormat("dd.MM.yyyy").format(secretSanta.getDate()));
+                        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy");
+                        String dateString = simpleDateFormat.format(secretSanta.getDate());
+                        editTextInfo.append("Datum: " + dateString);
                     }
-                    builder.setView(editText);
+
+                    // add editText with information to dialog
+                    builder.setView(editTextInfo);
+
+                } else {
+                    builder.setTitle("Es gibt keine Informationen!");
                 }
-                AlertDialog create = builder.create();
-                create.setCanceledOnTouchOutside(true);
-                create.show();
+
+
+                AlertDialog dialog = builder.create();
+                dialog.setCanceledOnTouchOutside(true);
+                dialog.show();
             }
         });
-        final ArrayList arrayList = new ArrayList();
-        final HashMap hashMap = new HashMap();
-        ArrayAdapter arrayAdapter = new ArrayAdapter(this, 17367043, arrayList);
-        this.listViewUsersSecretSanta.setAdapter(arrayAdapter);
-        this.secretSantaHelper.getAllUserSecretSantaUsers(this.dataRefUserSecretSanta, this.userSecretSanta.getSecretSanta(), map, arrayList, hashMap, arrayAdapter);
-        this.buttonAddWish.setOnClickListener(new View.OnClickListener() {
+
+
+        // user of the selected secret santa
+        final ArrayList<User> usersSecretSanta = new ArrayList<>();
+        final Map<String, UserSecretSanta> userSecretSantaUsers = new HashMap<>();
+
+        // listView for the participants
+        final ArrayAdapter listViewArrayAdapter = new ArrayAdapter(this,
+                android.R.layout.simple_list_item_1, usersSecretSanta);
+        listViewUsersSecretSanta.setAdapter(listViewArrayAdapter);
+
+        // load users into listView
+        secretSantaHelper.getAllUserSecretSantaUsers(dataRefUserSecretSanta, userSecretSanta.getSecretSanta(), users, usersSecretSanta, userSecretSantaUsers, listViewArrayAdapter);
+
+
+        // add Wish
+        buttonAddWish.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View view) {
-                WishDialog wishDialog = new WishDialog(SecretSantaActivity.this.userSecretSanta.getWish(), SecretSantaActivity.this.userSecretSanta.getSecretSanta().isSecretSantasSelected());
-                wishDialog.show(SecretSantaActivity.this.getSupportFragmentManager(), "wish");
-                wishDialog.setCancelable(true);
+                // dialog for adding wish
+                final AlertDialog.Builder builder = new AlertDialog.Builder(SecretSantaActivity.this);
+                builder.setCancelable(true);
+
+                builder.setTitle("Wunsch hinzufügen");
+
+                final UserSecretSanta userSecretSanta = userSecretSantaUsers.get(fAuth.getCurrentUser().getUid());
+                final EditText editTextEnterWish = new EditText(SecretSantaActivity.this);
+                editTextEnterWish.setHint("Bitte gib deinen Wunsch hier ein!");
+
+                if (userSecretSanta.getWish() != null) {
+                    editTextEnterWish.setText(userSecretSanta.getWish());
+                }
+
+                // set editTextEnterWish disabled if secret santas are already selected
+                if (userSecretSanta.getSecretSanta().isSecretSantasSelected()) {
+                    editTextEnterWish.setEnabled(false);
+                }
+
+
+                builder.setView(editTextEnterWish);
+
+                builder.setPositiveButton("Speichern", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if (!(userSecretSanta.getWish() == null && TextUtils.isEmpty(editTextEnterWish.getText()))) {
+                            // update Wish
+                            userSecretSanta.setWish(editTextEnterWish.getText().toString().trim());
+                            dataRefUserSecretSanta.child(userSecretSanta.getId()).setValue(userSecretSanta);
+                        }
+                        dialogInterface.dismiss();
+                    }
+                });
+
+                AlertDialog dialog = builder.create();
+                dialog.setCanceledOnTouchOutside(true);
+                dialog.show();
             }
         });
-        if (this.userSecretSanta.getSecretSanta().isSecretSantasSelected()) {
-            this.buttonSelectSecretSantas.setText(getResources().getString(C0859R.string.button_show_selected_secret_santa));
-            this.buttonSelectSecretSantas.setOnClickListener(new View.OnClickListener() {
+
+
+        if (userSecretSanta.getSecretSanta().isSecretSantasSelected()) {
+            // check if the secret santas are already selected
+            buttonSelectSecretSantas.setText(getResources().getString(R.string.button_show_selected_secret_santa));
+            buttonSelectSecretSantas.setOnClickListener(new View.OnClickListener() {
+                @Override
                 public void onClick(View view) {
-                    UserSecretSanta userSecretSanta = (UserSecretSanta) hashMap.get(SecretSantaActivity.this.userSecretSanta.getIdOfUserToBeSecretSantaFor());
-                    SelectedSecretSantaDialog selectedSecretSantaDialog = new SelectedSecretSantaDialog(((User) map.get(userSecretSanta.getUserId())).getName(), userSecretSanta.getWish());
-                    selectedSecretSantaDialog.show(SecretSantaActivity.this.getSupportFragmentManager(), "selectedSecretSanta");
-                    selectedSecretSantaDialog.setCancelable(true);
-                }
-            });
-        } else if (this.userSecretSanta.getSecretSanta().getCreator().equals(this.fAuth.getCurrentUser().getUid())) {
-            this.buttonAddParticipants.setVisibility(0);
-            this.buttonAddParticipants.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View view) {
+
+                    // dialog for showing user to be secret santa for
                     AlertDialog.Builder builder = new AlertDialog.Builder(SecretSantaActivity.this);
                     builder.setCancelable(true);
-                    SecretSantaActivity secretSantaActivity = SecretSantaActivity.this;
-                    Map<User, Boolean> determineUserNamesAndSelected = secretSantaActivity.determineUserNamesAndSelected(secretSantaActivity.fAuth.getCurrentUser().getUid(), map, arrayList);
-                    final String[] userIds = SecretSantaActivity.this.getUserIds(determineUserNamesAndSelected);
-                    String[] userNames = SecretSantaActivity.this.getUserNames(determineUserNamesAndSelected);
-                    final boolean[] userNamesSelected = SecretSantaActivity.this.getUserNamesSelected(determineUserNamesAndSelected);
-                    if (arrayList.size() != 0) {
+
+                    UserSecretSanta userSecretSanta = userSecretSantaUsers.get(fAuth.getCurrentUser().getUid());
+                    UserSecretSanta userSecretSantaOfUserToBeSecretSantaFor = userSecretSantaUsers.get(userSecretSanta.getIdOfUserToBeSecretSantaFor());
+                    User userToBeSecretSantaFor = users.get(userSecretSantaOfUserToBeSecretSantaFor.getUserId());
+
+                    builder.setTitle("Du bist der Secret Santa für...");
+                    // textView for information about selected secret santa
+                    TextView textViewInfo = new TextView(builder.getContext());
+
+                    // add name of selected secret santa
+                    textViewInfo.setText("..." + userToBeSecretSantaFor.getName() + " und dein Wichtel wünscht sich:\n");
+                    textViewInfo.append(userSecretSantaOfUserToBeSecretSantaFor.getWish() + "!\n");
+
+                    // add editText with information to dialog
+                    builder.setView(textViewInfo);
+
+                    AlertDialog dialog = builder.create();
+                    dialog.setCanceledOnTouchOutside(true);
+                    dialog.show();
+                }
+            });
+
+        } else if (userSecretSanta.getSecretSanta().getCreator().equals(fAuth.getCurrentUser().getUid())) {
+            // check if the current user is the creator of the secret santa
+            // implement addParticipants
+            buttonAddParticipants.setVisibility(View.VISIBLE);
+            buttonAddParticipants.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    // Dialog zum Teilnehmer hinzufügen erstellen
+                    AlertDialog.Builder builder = new AlertDialog.Builder(SecretSantaActivity.this);
+                    // abbrechen möglich
+                    builder.setCancelable(true);
+
+                    // bestimmen, welche User bereits am Wichteln teilnehmen
+                    final Map<User, Boolean> userNamesAndSelected = determineUserNamesAndSelected(fAuth.getCurrentUser().getUid(), users, usersSecretSanta);
+
+                    // UserNames für den Dialog auslesen
+                    final String[] userIds = getUserIds(userNamesAndSelected);
+                    final String[] userNames = getUserNames(userNamesAndSelected);
+                    final boolean[] userNamesSelected = getUserNamesSelected(userNamesAndSelected);
+
+                    // Titel festlegen
+                    if (usersSecretSanta.size() != 0) {
                         builder.setTitle("Füge einen User hinzu");
                     } else {
                         builder.setTitle("Es müssen sich erst weitere User anmelden!");
                     }
                     builder.setMultiChoiceItems(userNames, userNamesSelected, new DialogInterface.OnMultiChoiceClickListener() {
-                        public void onClick(DialogInterface dialogInterface, int i, boolean z) {
-                            if (z) {
-                                SecretSantaActivity.this.secretSantaHelper.addUserToSecretSanta(SecretSantaActivity.this.dataRefUserSecretSanta, userIds[i], SecretSantaActivity.this.userSecretSanta.getSecretSanta());
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+                            if (b) {
+                                // ausgewählten User zum Wichteln hinzufügen
+                                secretSantaHelper.addUserToSecretSanta(dataRefUserSecretSanta, userIds[i], userSecretSanta.getSecretSanta());
                             } else {
-                                SecretSantaActivity.this.secretSantaHelper.removeUserFromSecretSanta(SecretSantaActivity.this.dataRefUserSecretSanta, userIds[i], hashMap);
+                                // ausgewählten User vom Wichteln entfernen
+                                secretSantaHelper.removeUserFromSecretSanta(dataRefUserSecretSanta, userIds[i], userSecretSantaUsers);
                             }
-                            userNamesSelected[i] = z;
+                            // User zum Wichteln hinzufügen oder entfernen
+                            userNamesSelected[i] = b;
                         }
                     });
                     builder.setPositiveButton("Schließen", new DialogInterface.OnClickListener() {
+                        @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             dialogInterface.dismiss();
                         }
                     });
-                    AlertDialog create = builder.create();
-                    create.setCanceledOnTouchOutside(true);
-                    create.show();
+                    AlertDialog dialog = builder.create();
+                    dialog.setCanceledOnTouchOutside(true);
+                    dialog.show();
                 }
             });
-            this.buttonSelectSecretSantas.setOnClickListener(new View.OnClickListener() {
+
+            // creator can select secret santas if all users are ready
+            buttonSelectSecretSantas.setOnClickListener(new View.OnClickListener() {
+                @Override
                 public void onClick(View view) {
-                    UserSecretSanta userSecretSanta = (UserSecretSanta) hashMap.get(SecretSantaActivity.this.fAuth.getCurrentUser().getUid());
+                    UserSecretSanta userSecretSanta = userSecretSantaUsers.get(fAuth.getCurrentUser().getUid());
+
                     if (userSecretSanta.getWish() == null) {
-                        Toast.makeText(SecretSantaActivity.this, "Du musst zuerst einen Wunsch eintragen!", 1).show();
-                    } else if (hashMap.size() == 1) {
-                        Toast.makeText(SecretSantaActivity.this, "Du musst zuerst Teilnehmer hinzufügen!", 1).show();
+                        // a user has to give a wish first
+                        Toast.makeText(SecretSantaActivity.this, "Du musst zuerst einen Wunsch eintragen!", Toast.LENGTH_LONG).show();
+
                     } else {
-                        String str = "";
-                        boolean z = true;
-                        for (Map.Entry entry : hashMap.entrySet()) {
-                            if (((UserSecretSanta) entry.getValue()).getWish() == null && !((String) entry.getKey()).equals(userSecretSanta.getUserId())) {
-                                z = false;
-                                str = str + ((User) map.get(((UserSecretSanta) entry.getValue()).getUserId())).getName() + " (" + ((User) map.get(((UserSecretSanta) entry.getValue()).getUserId())).getMail() + ")\n";
+
+                        // check if there is more than one user
+                        if (userSecretSantaUsers.size() == 1) {
+                            Toast.makeText(SecretSantaActivity.this, "Du musst zuerst Teilnehmer hinzufügen!", Toast.LENGTH_LONG).show();
+                        } else {
+
+                        // select secret santas if all users are ready
+                            String usersNotReady = "";
+                            boolean allReady = true;
+                            for (Map.Entry<String, UserSecretSanta> entry : userSecretSantaUsers.entrySet()) {
+                                if (!entry.getValue().isReady() && !entry.getKey().equals(userSecretSanta.getUserId())) {
+                                    allReady = false;
+                                    usersNotReady += users.get(entry.getValue().getUserId()).getName() + " (" + users.get(entry.getValue().getUserId()).getMail() + ")\n";
+                                }
                             }
-                        }
-                        new HashMap();
-                        if (z) {
-                            SecretSantaActivity.this.secretSantaHelper.selectSecretSantas(hashMap, SecretSantaActivity.this.dataRefUserSecretSanta);
-                            Toast.makeText(SecretSantaActivity.this, "Die Secret Santas wurden ausgelost!", 1).show();
-                            Intent intent = new Intent(SecretSantaActivity.this, SecretSantaActivity.class);
-                            intent.putExtra("secretSanta", userSecretSanta.getSecretSanta());
-                            intent.putExtra("users", (Serializable) map);
-                            intent.putExtra("userSecretSanta", userSecretSanta);
-                            SecretSantaActivity.this.startActivity(intent);
-                            return;
-                        }
-                        Toast.makeText(SecretSantaActivity.this, "Folgende User müssen noch einen Wunsch eintragen:\n" + str, 1).show();
-                    }
+                            Map<String, UserSecretSanta> selectedSecretSantas = new HashMap<>();
+
+                            if (allReady) {
+                                secretSantaHelper.selectSecretSantas(userSecretSantaUsers, dataRefUserSecretSanta);
+                                Toast.makeText(SecretSantaActivity.this, "Die Secret Santas wurden ausgelost!", Toast.LENGTH_LONG).show();
+
+
+                                // load again activity to apply changes
+                                Intent intent = new Intent(SecretSantaActivity.this, SecretSantaActivity.class);
+
+                                // selected secret santa
+                                intent.putExtra("secretSanta", userSecretSanta.getSecretSanta());
+
+                                // all users
+                                intent.putExtra("users", (Serializable) users);
+
+                                // userSecretSanta of the current user for the selected secret santa
+                                intent.putExtra("userSecretSanta", userSecretSanta);
+
+                                // call activity
+                                startActivity(intent);
+
+                            } else {
+
+                                // show who still has to add a wish
+                                Toast.makeText(SecretSantaActivity.this, "Folgende User müssen noch einen Wunsch eintragen:\n" + usersNotReady, Toast.LENGTH_LONG).show();
+                            }
+                    }}
                 }
             });
         } else {
-            this.buttonSelectSecretSantas.setText(getResources().getString(C0859R.string.button_ready_for_select_secret_santas));
-            this.buttonSelectSecretSantas.setVisibility(4);
+
+            // other participants can only say that they are ready, it is possible to select the secret santas if all participants are ready
+            buttonSelectSecretSantas.setText(getResources().getString(R.string.button_ready_for_select_secret_santas));
+
+            // disable button if user is already ready
+            if (userSecretSanta.isReady()) {
+                buttonSelectSecretSantas.setEnabled(false);
+            }
+
+            // 
+            buttonSelectSecretSantas.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    // check if the user has already added a wish
+                    if (userSecretSanta.getWish() != null) {
+                        // set user to ready
+                        userSecretSanta.setReady(true);
+
+                        // load again activity to apply changes
+                        Intent intent = new Intent(SecretSantaActivity.this, SecretSantaActivity.class);
+
+                        // selected secret santa
+                        intent.putExtra("secretSanta", userSecretSanta.getSecretSanta());
+
+                        // all users
+                        intent.putExtra("users", (Serializable) users);
+
+                        // userSecretSanta of the current user for the selected secret santa
+                        intent.putExtra("userSecretSanta", userSecretSanta);
+
+                        // call activity
+                        startActivity(intent);
+
+                    } else {
+
+                        Toast.makeText(SecretSantaActivity.this, "Du musst zuerst einen Wunsch eintragen!", Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
         }
+
+
     }
 
-    public Map<User, Boolean> determineUserNamesAndSelected(String str, Map<String, User> map, ArrayList<User> arrayList) {
-        HashMap hashMap = new HashMap();
-        for (Map.Entry next : map.entrySet()) {
-            if (!((String) next.getKey()).equals(str)) {
-                hashMap.put(next.getValue(), false);
-                Iterator<User> it = arrayList.iterator();
-                while (true) {
-                    if (it.hasNext()) {
-                        if (((String) next.getKey()).equals(it.next().getId())) {
-                            hashMap.put(next.getValue(), true);
-                            break;
-                        }
-                    } else {
+    // get the users with flag if already in this secret santa or not
+    public Map<User, Boolean> determineUserNamesAndSelected(String userId, Map<String, User> users, ArrayList<User> usersSecretSanta) {
+
+        HashMap<User, Boolean> userNamesAndSelected = new HashMap<>();
+
+        for (Map.Entry<String, User> entry : users.entrySet()) {
+            if (!entry.getKey().equals(userId)) {
+                userNamesAndSelected.put(entry.getValue(), false);
+                for (User userSecretSanta : usersSecretSanta) {
+                    if (entry.getKey().equals(userSecretSanta.getId())) {
+                        // user is participant
+                        userNamesAndSelected.put(entry.getValue(), true);
                         break;
                     }
                 }
             }
         }
-        return hashMap;
+        return userNamesAndSelected;
     }
 
-    public String[] getUserNames(Map<User, Boolean> map) {
-        String[] strArr = new String[map.size()];
-        int i = 0;
-        for (Map.Entry next : map.entrySet()) {
-            strArr[i] = ((User) next.getKey()).getName() + "\n" + ((User) next.getKey()).getMail();
-            i++;
+    public String[] getUserNames(Map<User, Boolean> userNamesAndSelected) {
+
+        String[] userNames = new String[userNamesAndSelected.size()];
+        int counter = 0;
+        for (Map.Entry<User, Boolean> entry : userNamesAndSelected.entrySet()) {
+            userNames[counter] = entry.getKey().getName() + "\n" + entry.getKey().getMail();
+            counter++;
         }
-        return strArr;
+        return userNames;
     }
 
-    public boolean[] getUserNamesSelected(Map<User, Boolean> map) {
-        boolean[] zArr = new boolean[map.size()];
-        int i = 0;
-        for (Map.Entry<User, Boolean> value : map.entrySet()) {
-            zArr[i] = ((Boolean) value.getValue()).booleanValue();
-            i++;
+    public boolean[] getUserNamesSelected(Map<User, Boolean> userNamesAndSelected) {
+        boolean[] userNamesSelected = new boolean[userNamesAndSelected.size()];
+        int counter = 0;
+        for (Map.Entry<User, Boolean> entry : userNamesAndSelected.entrySet()) {
+            userNamesSelected[counter] = entry.getValue();
+            counter++;
         }
-        return zArr;
+        return userNamesSelected;
     }
 
-    public String[] getUserIds(Map<User, Boolean> map) {
-        String[] strArr = new String[map.size()];
-        int i = 0;
-        for (Map.Entry<User, Boolean> key : map.entrySet()) {
-            strArr[i] = ((User) key.getKey()).getId();
-            i++;
+    public String[] getUserIds(Map<User, Boolean> userNamesAndSelected) {
+        String[] userIds = new String[userNamesAndSelected.size()];
+        int counter = 0;
+        for (Map.Entry<User, Boolean> entry : userNamesAndSelected.entrySet()) {
+            userIds[counter] = entry.getKey().getId();
+            counter++;
         }
-        return strArr;
-    }
-
-    public void saveWish(String str) {
-        this.userSecretSanta.setWish(str);
-        this.dataRefUserSecretSanta.child(this.userSecretSanta.getId()).setValue(this.userSecretSanta);
+        return userIds;
     }
 }

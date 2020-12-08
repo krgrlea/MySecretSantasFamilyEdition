@@ -1,72 +1,84 @@
 package com.practice.secretsanta;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import java.io.Serializable;
 
 public class UserSecretSanta implements Serializable {
 
-    /* renamed from: id */
-    String f137id;
-    String idOfUserToBeSecretSantaFor;
-    SecretSanta secretSanta;
-    String secretSantaId;
+    String id;
     String userId;
+    String secretSantaId;
+    SecretSanta secretSanta;
     String wish;
+    boolean ready;
+    String idOfUserToBeSecretSantaFor;
 
     public UserSecretSanta() {
     }
 
-    public UserSecretSanta(String str, String str2, SecretSanta secretSanta2) {
-        this.f137id = str;
-        this.userId = str2;
-        this.secretSantaId = secretSanta2.getId();
-        this.secretSanta = secretSanta2;
+    public UserSecretSanta(String id, String userId, SecretSanta secretSanta) {
+        this.id = id;
+        this.userId = userId;
+        this.secretSantaId = secretSanta.getId();
+        this.secretSanta = secretSanta;
+        this.ready = false;
     }
 
     public String getId() {
-        return this.f137id;
+        return id;
     }
 
-    public void setId(String str) {
-        this.f137id = str;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getUserId() {
-        return this.userId;
+        return userId;
     }
 
-    public void setUserId(String str) {
-        this.userId = str;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getSecretSantaId() {
-        return this.secretSantaId;
+        return secretSantaId;
     }
 
-    public void setSecretSantaId(String str) {
-        this.secretSantaId = str;
+    public void setSecretSantaId(String secretSantaId) {
+        this.secretSantaId = secretSantaId;
     }
 
     public SecretSanta getSecretSanta() {
-        return this.secretSanta;
+        return secretSanta;
     }
 
-    public void setSecretSanta(SecretSanta secretSanta2) {
-        this.secretSanta = secretSanta2;
+    public void setSecretSanta(SecretSanta secretSanta) {
+        this.secretSanta = secretSanta;
     }
 
     public String getWish() {
-        return this.wish;
+        return wish;
     }
 
-    public void setWish(String str) {
-        this.wish = str;
+    public void setWish(String wish) {
+        this.wish = wish;
+    }
+
+    public boolean isReady() {
+        return ready;
+    }
+
+    public void setReady(boolean ready) {
+        this.ready = ready;
     }
 
     public String getIdOfUserToBeSecretSantaFor() {
-        return this.idOfUserToBeSecretSantaFor;
+        return idOfUserToBeSecretSantaFor;
     }
 
-    public void setIdOfUserToBeSecretSantaFor(String str) {
-        this.idOfUserToBeSecretSantaFor = str;
+    public void setIdOfUserToBeSecretSantaFor(String idOfUserToBeSecretSantaFor) {
+        this.idOfUserToBeSecretSantaFor = idOfUserToBeSecretSantaFor;
     }
 }

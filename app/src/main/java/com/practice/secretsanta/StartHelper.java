@@ -1,109 +1,152 @@
 package com.practice.secretsanta;
 
 import android.widget.ArrayAdapter;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import java.util.ArrayList;
 import java.util.Map;
 
+// helper class for StartActivity
 public class StartHelper {
-    public void deleteUserSecretSantas(DatabaseReference databaseReference, User user) {
-    }
 
-    public void loadUserSecretSantasUser(DatabaseReference databaseReference, String str, final Map<String, UserSecretSanta> map, final ArrayList<SecretSanta> arrayList, final ArrayAdapter<SecretSanta> arrayAdapter) {
-        databaseReference.orderByChild("userId").equalTo(str).addChildEventListener(new ChildEventListener() {
-            public void onCancelled(DatabaseError databaseError) {
+
+    public void loadUserSecretSantasUser(DatabaseReference dataRefUserSecretSanta, String userId, final Map<String, UserSecretSanta> userSecretSantasUser, final ArrayList<SecretSanta> secretSantas, final ArrayAdapter<SecretSanta> listViewArrayAdapter) {
+        dataRefUserSecretSanta.orderByChild("userId").equalTo(userId).addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                UserSecretSanta userSecretSanta = dataSnapshot.getValue(UserSecretSanta.class);
+
+                userSecretSantasUser.put(userSecretSanta.getSecretSanta().getId(), userSecretSanta);
+                // add secret santa to listview
+                secretSantas.add(userSecretSanta.getSecretSanta());
+                listViewArrayAdapter.notifyDataSetChanged();
             }
 
-            public void onChildMoved(DataSnapshot dataSnapshot, String str) {
-            }
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                UserSecretSanta userSecretSanta = dataSnapshot.getValue(UserSecretSanta.class);
 
-            public void onChildAdded(DataSnapshot dataSnapshot, String str) {
-                UserSecretSanta userSecretSanta = (UserSecretSanta) dataSnapshot.getValue(UserSecretSanta.class);
-                map.put(userSecretSanta.getSecretSanta().getId(), userSecretSanta);
-                arrayList.add(userSecretSanta.getSecretSanta());
-                arrayAdapter.notifyDataSetChanged();
-            }
+                userSecretSantasUser.put(userSecretSanta.getSecretSanta().getId(), userSecretSanta);
 
-            public void onChildChanged(DataSnapshot dataSnapshot, String str) {
-                UserSecretSanta userSecretSanta = (UserSecretSanta) dataSnapshot.getValue(UserSecretSanta.class);
-                map.put(userSecretSanta.getSecretSanta().getId(), userSecretSanta);
-                int i = 0;
-                while (true) {
-                    if (i >= arrayList.size()) {
+                // remove unchanged secret santa from listview
+                for (int i = 0; i < secretSantas.size(); i++) {
+                    if (secretSantas.get(i).getId().equals(userSecretSanta.getSecretSantaId())) {
+                        secretSantas.remove(i);
                         break;
-                    } else if (((SecretSanta) arrayList.get(i)).getId().equals(userSecretSanta.getSecretSantaId())) {
-                        arrayList.remove(i);
-                        break;
-                    } else {
-                        i++;
                     }
                 }
-                arrayList.add(userSecretSanta.getSecretSanta());
-                arrayAdapter.notifyDataSetChanged();
+
+                // add changed secret santa to listview
+                secretSantas.add(userSecretSanta.getSecretSanta());
+                listViewArrayAdapter.notifyDataSetChanged();
             }
 
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-                UserSecretSanta userSecretSanta = (UserSecretSanta) dataSnapshot.getValue(UserSecretSanta.class);
-                map.remove(userSecretSanta.getSecretSanta().getId());
-                for (int i = 0; i < arrayList.size(); i++) {
-                    if (((SecretSanta) arrayList.get(i)).getId().equals(userSecretSanta.getSecretSanta())) {
-                        arrayList.remove(i);
-                        arrayAdapter.notifyDataSetChanged();
-                        return;
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                UserSecretSanta userSecretSanta = dataSnapshot.getValue(UserSecretSanta.class);
+                userSecretSantasUser.remove(userSecretSanta.getSecretSanta().getId());
+                // remove secret santa from listview
+                for (int i = 0; i < secretSantas.size(); i++) {
+                    if (secretSantas.get(i).getId().equals(userSecretSanta.getSecretSanta())) {
+                        secretSantas.remove(i);
+                        listViewArrayAdapter.notifyDataSetChanged();
+                        break;
                     }
                 }
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
         });
     }
 
-    public void loadAllUsers(DatabaseReference databaseReference, final DatabaseReference databaseReference2, final Map<String, User> map) {
-        databaseReference.orderByKey().addChildEventListener(new ChildEventListener() {
-            public void onCancelled(DatabaseError databaseError) {
+    public void   loadAllUsers(DatabaseReference dataRefUser, final DatabaseReference dataRefUserSecretSanta, final Map<String, User> users) {
+        // teilnehmende User in die usersSecretSanta laden
+        dataRefUser.orderByKey().addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) { User user = dataSnapshot.getValue(User.class);
+                users.put(user.getId(), user);
             }
 
-            public void onChildChanged(DataSnapshot dataSnapshot, String str) {
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
             }
 
-            public void onChildMoved(DataSnapshot dataSnapshot, String str) {
-            }
-
-            public void onChildAdded(DataSnapshot dataSnapshot, String str) {
-                User user = (User) dataSnapshot.getValue(User.class);
-                map.put(user.getId(), user);
-            }
-
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-                User user = (User) dataSnapshot.getValue(User.class);
-                for (Map.Entry value : map.entrySet()) {
-                    if (((User) value.getValue()).equals(user)) {
-                        map.remove(user);
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                // remove user from users
+                User user = dataSnapshot.getValue(User.class);
+                for (Map.Entry<String, User> entry : users.entrySet()) {
+                    if (entry.getValue().equals(user)) {
+                        users.remove(user);
                     }
                 }
-                StartHelper.this.deleteUserSecretSantas(databaseReference2, user);
+                // delete userSecretSantas
+                deleteUserSecretSantas(dataRefUserSecretSanta, user);
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
         });
     }
 
-    public void loadUsersTobeSecretSantaFor(DatabaseReference databaseReference, String str, final Map<String, UserSecretSanta> map) {
-        databaseReference.orderByChild("selectedSecretSantaId").equalTo(str).addChildEventListener(new ChildEventListener() {
-            public void onCancelled(DatabaseError databaseError) {
+    public void deleteUserSecretSantas(DatabaseReference dataRefUserSecretSanta, User user) {
+        // not yet implemented
+    }
+
+    // load the userSecretSanta objects of the users the current user has to be secret santa for into userSecretSantas with secret santa id as key
+    public void loadUsersTobeSecretSantaFor(DatabaseReference dataRefUserSecretSanta, String userId, final Map<String, UserSecretSanta> selectedSecretSantas) {
+        dataRefUserSecretSanta.orderByChild("selectedSecretSantaId").equalTo(userId).addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                // add userSecretSanta to selectedSecretSantas
+                UserSecretSanta userSecretSanta = dataSnapshot.getValue(UserSecretSanta.class);
+                selectedSecretSantas.put(userSecretSanta.getSecretSanta().getId(), userSecretSanta);
             }
 
-            public void onChildChanged(DataSnapshot dataSnapshot, String str) {
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
             }
 
-            public void onChildMoved(DataSnapshot dataSnapshot, String str) {
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                // not yet implemented
+
             }
 
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
             }
 
-            public void onChildAdded(DataSnapshot dataSnapshot, String str) {
-                UserSecretSanta userSecretSanta = (UserSecretSanta) dataSnapshot.getValue(UserSecretSanta.class);
-                map.put(userSecretSanta.getSecretSanta().getId(), userSecretSanta);
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
             }
         });
     }

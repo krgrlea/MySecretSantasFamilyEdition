@@ -1,47 +1,56 @@
 package com.practice.secretsanta;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class User implements Serializable {
-
-    /* renamed from: id */
-    String f136id;
-    String mail;
+    String id;
     String name;
+    String mail;
 
     public User() {
     }
 
-    public User(String str, String str2, String str3) {
-        this.f136id = str;
-        this.name = str2;
-        this.mail = str3;
+    public User(String id, String name, String mail) {
+        this.id = id;
+        this.name = name;
+        this.mail = mail;
     }
 
     public String getId() {
-        return this.f136id;
+        return id;
     }
 
-    public void setId(String str) {
-        this.f136id = str;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
-        return this.name;
+        return name;
     }
 
-    public void setName(String str) {
-        this.name = str;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getMail() {
-        return this.mail;
+        return mail;
     }
 
-    public void setMail(String str) {
-        this.mail = str;
+    public void setMail(String mail) {
+        this.mail = mail;
     }
 
+    @Override
     public String toString() {
         return this.name;
     }

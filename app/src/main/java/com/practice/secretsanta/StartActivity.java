@@ -1,91 +1,170 @@
 package com.practice.secretsanta;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
+// start of the app
 public class StartActivity extends AppCompatActivity {
-    Button buttonAddSecretSanta;
+
+    // UI
+    TextView textViewHeaderMain;
     Button buttonLogOut;
+
+    // listView for joined secret santas
+    ListView listViewJoinedSecretSantas;
+    Button buttonAddSecretSanta;
+
+    // user
+    FirebaseAuth fAuth = FirebaseAuth.getInstance();
+
+    // database
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference dataRefUser;
     DatabaseReference dataRefUserSecretSanta;
-    FirebaseDatabase database = FirebaseDatabase.getInstance();
-    FirebaseAuth fAuth = FirebaseAuth.getInstance();
-    ListView listViewJoinedSecretSantas;
-    SharedPreferences prefs;
+
+    // instances of helper classes
     SecretSantaHelper secretSantaHelper = new SecretSantaHelper();
     StartHelper startHelper = new StartHelper();
-    TextView textViewHeaderMain;
 
-    /* access modifiers changed from: protected */
-    public void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
-        setContentView((int) C0859R.layout.activity_start);
-        this.dataRefUser = this.database.getReference(getResources().getString(C0859R.string.db_user));
-        this.dataRefUserSecretSanta = this.database.getReference(getResources().getString(C0859R.string.db_user_secret_santa));
-        this.textViewHeaderMain = (TextView) findViewById(C0859R.C0862id.textViewHeaderMain);
-        this.buttonLogOut = (Button) findViewById(C0859R.C0862id.buttonLogOut);
-        this.listViewJoinedSecretSantas = (ListView) findViewById(C0859R.C0862id.listViewJoinedSecretSantas);
-        this.buttonAddSecretSanta = (Button) findViewById(C0859R.C0862id.buttonAddSecretSanta);
-        SharedPreferences defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        this.prefs = defaultSharedPreferences;
-        if (defaultSharedPreferences.getBoolean("loggedIn", false)) {
-            this.buttonLogOut.setOnClickListener(new View.OnClickListener() {
+    SharedPreferences prefs;
+
+    // called while starting activity
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // call activity_start.xml
+        setContentView(R.layout.activity_start);
+
+
+        // references for database
+        dataRefUser = database.getReference(getResources().getString(R.string.db_user));
+        dataRefUserSecretSanta = database.getReference(getResources().getString(R.string.db_user_secret_santa));
+
+
+        // UI-elements
+        textViewHeaderMain = (TextView) findViewById(R.id.textViewHeaderMain);
+        buttonLogOut = (Button) findViewById(R.id.buttonLogOut);
+        listViewJoinedSecretSantas = (ListView) findViewById(R.id.listViewJoinedSecretSantas);
+        buttonAddSecretSanta = (Button) findViewById(R.id.buttonAddSecretSanta);
+
+
+        // check if user is signed in
+        prefs = PreferenceManager.getDefaultSharedPreferences(StartActivity.this);
+        boolean loggedIn = prefs.getBoolean("loggedIn", false);
+        //prefs.edit().putBoolean("loggedIn", false).commit();
+
+        if (loggedIn) {
+
+            // logout possible
+            buttonLogOut.setOnClickListener(new View.OnClickListener() {
+                @Override
                 public void onClick(View view) {
-                    StartActivity.this.fAuth.signOut();
-                    StartActivity.this.prefs.edit().putBoolean("loggedIn", false).commit();
-                    StartActivity.this.startActivity(new Intent(StartActivity.this, LogInActivity.class));
-                    StartActivity.this.finish();
+                    fAuth.signOut();
+                    prefs.edit().putBoolean("loggedIn", false).commit();
+                    // go back to login
+                    Intent intent = new Intent(StartActivity.this, LogInActivity.class);
+                    startActivity(intent);
+                    finish();
                 }
             });
-            final HashMap hashMap = new HashMap();
-            this.startHelper.loadAllUsers(this.dataRefUser, this.dataRefUserSecretSanta, hashMap);
-            final HashMap hashMap2 = new HashMap();
-            ArrayList arrayList = new ArrayList();
-            C08772 r8 = new ArrayAdapter<SecretSanta>(this, 17367043, arrayList) {
-                public View getView(int i, View view, ViewGroup viewGroup) {
-                    View view2 = super.getView(i, view, viewGroup);
-                    TextView textView = (TextView) view2.findViewById(16908308);
-                    textView.setTextColor(StartActivity.this.getResources().getColor(C0859R.C0860color.colorFont));
-                    textView.setTextAppearance(StartActivity.this, 16973892);
-                    return view2;
-                }
-            };
-            this.listViewJoinedSecretSantas.setAdapter(r8);
-            this.startHelper.loadUserSecretSantasUser(this.dataRefUserSecretSanta, this.fAuth.getCurrentUser().getUid(), hashMap2, arrayList, r8);
-            this.buttonAddSecretSanta.setOnClickListener(new View.OnClickListener() {
+
+
+            // load all users for adding users to the secret santa in the next step
+            final Map<String, User> users = new HashMap<>();
+            startHelper.loadAllUsers(dataRefUser, dataRefUserSecretSanta, users);
+
+
+            // userSecretSantas of the User
+            final Map<String, UserSecretSanta> userSecretSantasUser = new HashMap<>();
+
+            // secret santas the user is in for the listView
+            final ArrayList<SecretSanta> secretSantas = new ArrayList<>();
+
+            // add adapter for joined secret santas
+            final ArrayAdapter listViewArrayAdapter = new ArrayAdapter(this,
+                    android.R.layout.simple_list_item_1, secretSantas);
+            listViewJoinedSecretSantas.setAdapter(listViewArrayAdapter);
+
+            // load userSecretSanta
+            startHelper.loadUserSecretSantasUser(dataRefUserSecretSanta, fAuth.getCurrentUser().getUid(), userSecretSantasUser, secretSantas, listViewArrayAdapter);
+
+
+            // create new secret santa
+            buttonAddSecretSanta.setOnClickListener(new View.OnClickListener() {
+                @Override
                 public void onClick(View view) {
-                    StartActivity.this.startActivity(new Intent(StartActivity.this, AddSecretSantaActivity.class));
+                    Intent intent = new Intent(StartActivity.this, AddSecretSantaActivity.class);
+                    startActivity(intent);
                 }
             });
-            this.startHelper.loadUsersTobeSecretSantaFor(this.dataRefUserSecretSanta, this.fAuth.getCurrentUser().getUid(), new HashMap());
-            this.listViewJoinedSecretSantas.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long j) {
+
+
+            // UserSecretSantas of the users the current user is secret santa for with id of secret santa as key
+            final Map<String, UserSecretSanta> selectedSecretSantas = new HashMap<>();
+            // load users to be secret santa for
+            startHelper.loadUsersTobeSecretSantaFor(dataRefUserSecretSanta, fAuth.getCurrentUser().getUid(), selectedSecretSantas);
+
+
+            // open secret santa by click
+            listViewJoinedSecretSantas.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+                    // get selected secret santa
                     SecretSanta secretSanta = (SecretSanta) adapterView.getItemAtPosition(i);
+
+                    // call SecretSantaActivity
                     Intent intent = new Intent(StartActivity.this, SecretSantaActivity.class);
                     intent.putExtra("secretSanta", secretSanta);
-                    intent.putExtra("users", (Serializable) hashMap);
-                    intent.putExtra("userSecretSanta", (Serializable) hashMap2.get(secretSanta.getId()));
-                    StartActivity.this.startActivity(intent);
+
+                    // get suitable userSecretSanta for selected secret santa
+                    intent.putExtra("users", (Serializable) users);
+
+                    // get userSecretSanta of the current user for the selected secret santa
+                    intent.putExtra("userSecretSanta", userSecretSantasUser.get(secretSanta.getId()));
+
+                    // call activity
+                    startActivity(intent);
                 }
             });
-            return;
+        } else {
+            Intent intent = new Intent(StartActivity.this, LogInActivity.class);
+
+            // call activity
+            startActivity(intent);
         }
-        startActivity(new Intent(this, LogInActivity.class));
+
     }
 }

@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+
 import androidx.appcompat.app.AppCompatDialogFragment;
 
 public class WishDialog extends AppCompatDialogFragment {
@@ -17,12 +18,12 @@ public class WishDialog extends AppCompatDialogFragment {
     WishDialogListener wishDialogListener;
 
     public interface WishDialogListener {
-        void saveWish(String str);
+        void saveWish(String wish);
     }
 
-    public WishDialog(String str, boolean z) {
-        this.wish = str;
-        this.secretSantasSelected = z;
+    public WishDialog(String str, boolean secretSantasSelected) {
+        this.wish = wish;
+        this.secretSantasSelected = secretSantasSelected;
     }
 
     public void setCancelable(boolean z) {
@@ -31,10 +32,10 @@ public class WishDialog extends AppCompatDialogFragment {
 
     public Dialog onCreateDialog(Bundle bundle) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(C0859R.string.title_dialog_wish);
-        View inflate = getActivity().getLayoutInflater().inflate(C0859R.layout.dialog_wish, (ViewGroup) null);
+        builder.setTitle(R.string.title_dialog_wish);
+        View inflate = getActivity().getLayoutInflater().inflate(R.layout.dialog_wish, (ViewGroup) null);
         builder.setView(inflate);
-        EditText editText = (EditText) inflate.findViewById(C0859R.C0862id.editTextEnterWish);
+        EditText editText = (EditText) inflate.findViewById(R.id.editTextEnterWish);
         this.editTextEnterWish = editText;
         String str = this.wish;
         if (str != null) {
