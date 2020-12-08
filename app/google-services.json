@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "18741852671",
+    "firebase_url": "https://secret-santa-7e565.firebaseio.com",
+    "project_id": "secret-santa-7e565",
+    "storage_bucket": "secret-santa-7e565.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18741852671:android:827d266d27893ec11a0fca",
+        "android_client_info": {
+          "package_name": "com.practice.secretsanta"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "18741852671-73sted8grbqhtialvc0jo6h4hv9cdo13.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.practice.secretsanta",
+            "certificate_hash": "1a1f349bd4b0b4329aefbf818f70d253ccf1897a"
+          }
+        },
+        {
+          "client_id": "18741852671-usj84ioducrh917jr7qvcmo70re9i9vb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCac5RvelWWMR3C4d9LkT3PHA07-uu6Xvg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "18741852671-usj84ioducrh917jr7qvcmo70re9i9vb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
